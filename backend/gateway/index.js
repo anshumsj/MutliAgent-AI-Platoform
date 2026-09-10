@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import proxy from "express-http-proxy";
 import cookieParser from "cookie-parser";
+import { getCurrentUser } from "./controller/user.controller.js";
+import protect from "./middleware/auth.middleware.js";
 dotenv.config();
 
 const port = process.env.PORT || 8000;
@@ -16,8 +18,8 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-app.use("/auth",proxy(process.env.AUTH_SERVICE));// ye hamare gateway to auth service se connect karta hai redirect karta hai
-
+app.use("/api/auth",proxy(process.env.AUTH_SERVICE));// ye hamare gateway to auth service se connect karta hai redirect karta hai
+app.get("/api/me",protect,getCurrentUser);
 app.get("/", (req, res) => {
     res.json({ message: "hello from MutiAI Gateway!" });
 })
