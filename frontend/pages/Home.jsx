@@ -3,19 +3,21 @@ import { signInWithPopup } from "firebase/auth";
 import { FcGoogle } from "react-icons/fc";
 import { auth, googleProvider } from "../utils/firebase";
 import api from "../utils/axios";
+import { useDispatch, useSelector } from "react-redux";
+import { setUserdata } from "../src/redux/userSlice";
 
 function Home() {
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
 
+  const { userData } = useSelector((state) => state.user);
+  const user = userData?.user || userData;
+  const dispatch = useDispatch();
+    
   const handleLogin = async (token) => {
     try {
       const { data } = await api.post("/api/auth/login", { token });
-      console.log("Backend login success:", data);
-      if (data.user) {
-        setUser(data.user);
-      }
+      dispatch(setUserdata(data?.user || data));
       return data;
     } catch (err) {
       const msg = err.response?.data?.message || err.message || "Login failed";
