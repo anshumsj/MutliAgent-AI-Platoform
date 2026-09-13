@@ -21,6 +21,7 @@ app.use(cookieParser());
 
 app.use("/api/auth",proxy(process.env.AUTH_SERVICE));// ye hamare gateway to auth service se connect karta hai redirect karta hai
 app.use("/api/chat",protect,proxyWithHeader(process.env.CHAT_SERVICE));
+app.use("/api/agent",protect,proxy(process.env.AGENT_SERVICE));
 app.get("/api/me",protect,getCurrentUser);
 app.get("/", (req, res) => {
     res.json({ message: "hello from MutiAI Gateway!" });
