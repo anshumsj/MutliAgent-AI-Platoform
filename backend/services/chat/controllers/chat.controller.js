@@ -35,7 +35,7 @@ export const getConversation = async (req, res) => {
 
 export const updateConversation = async (req, res) => {
     try {
-        const { conversationId } = req.params;
+        const conversationId = req.params.conversationId || req.body.conversationId;
         const { title } = req.body;
         console.log("conversationId:", conversationId);
         const conversation = await Conversation.findByIdAndUpdate(conversationId, {
@@ -52,7 +52,7 @@ export const updateConversation = async (req, res) => {
 
 export const saveMessage = async (req, res) => {
     try {
-        const { conversationId } = req.params;
+        const conversationId = req.params.conversationId || req.body.conversationId;
         const { role, content } = req.body;
         const message = await Message.create({    
             conversationId,
@@ -69,7 +69,7 @@ export const saveMessage = async (req, res) => {
 
 export const getMessage = async (req, res) => {
     try {
-        const { conversationId } = req.params;
+        const conversationId = req.params.conversationId || req.query.conversationId;
         console.log("conversationId:", conversationId);
         const messages = await Message.find({ conversationId }).sort({ createdAt: 1 });
         console.log("Messages:", messages);

@@ -11,6 +11,17 @@ export const agent = async(req,res)=>{
             conversationId
         })
         const response = result.aiResponse
+        if (response && conversationId) {
+            try {
+                await axios.post(`${process.env.CHAT_SERVICE}/saveMessage`, {
+                    conversationId,
+                    role: "assistant",
+                    content: response
+                });
+            } catch (saveErr) {
+                console.error("Error saving assistant message:", saveErr.message);
+            }
+        }
         return res.status(200).json({
             success:true,
             message:"Agent response",
