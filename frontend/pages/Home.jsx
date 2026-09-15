@@ -5,6 +5,7 @@ import { auth, googleProvider } from "../utils/firebase";
 import api from "../utils/axios";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserdata } from "../src/redux/userSlice";
+import UserAvatar from "../src/components/UserAvatar.jsx";
 
 function Home() {
   const [loading, setLoading] = useState(false);
@@ -73,17 +74,7 @@ function Home() {
       {/* Logged-In User Card */}
       {user ? (
         <div className="w-full bg-neutral-900/60 border border-neutral-700/60 rounded-xl p-4 flex items-center gap-3 text-left">
-          {user.avatar ? (
-            <img
-              src={user.avatar}
-              alt={user.name}
-              className="w-11 h-11 rounded-full border border-neutral-600 object-cover"
-            />
-          ) : (
-            <div className="w-11 h-11 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white">
-              {user.name?.[0]?.toUpperCase() || "U"}
-            </div>
-          )}
+          <UserAvatar avatar={user.avatar} name={user.name} size="md" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white truncate">
               {user.name}
