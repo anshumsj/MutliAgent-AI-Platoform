@@ -76,7 +76,7 @@ vision
 User Query:${state.prompt}`
 
 const response = await llm.invoke(prompt)
-console.log(response);
+console.log(`[Router] Selected Agent: ${response.content.trim()}`);
 return {
     ...state,
     agent:response.content.trim().toLowerCase()
