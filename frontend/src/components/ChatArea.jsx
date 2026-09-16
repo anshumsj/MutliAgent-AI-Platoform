@@ -15,7 +15,8 @@ import getMessages from "../features/getMessages.js";
 import { sendMessage } from "../features/sendMessage.js";
 import { createConversation } from "../features/createConversation.js";
 import { setMessages, addMessage } from "../redux/messageSlice.js";
-import { addConversation, setCurrentConversation } from "../redux/conversationSlice.js";
+import { addConversation, setCurrentConversation, updateConversationTitle } from "../redux/conversationSlice.js";
+import { updateConversationTitleApi } from "../features/updateConversation.js";
 
 export default function ChatArea() {
   const dispatch = useDispatch();
@@ -26,6 +27,7 @@ export default function ChatArea() {
   const [isGenerating, setIsGenerating] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const isAutoCreatingRef = useRef(false);
 
   // Suggestions matching screenshot
   const suggestions = [
@@ -40,6 +42,13 @@ export default function ChatArea() {
       dispatch(setMessages([]));
       return;
     }
+
+    // Skip fetching if this conversation was just auto-created during handleSend (to preserve optimistic message)
+    if (isAutoCreatingRef.current) {
+      isAutoCreatingRef.current = false;
+      return;
+    }
+
     const fetchChatMessages = async () => {
       try {
         const data = await getMessages(currentConversation._id);
@@ -80,13 +89,19 @@ export default function ChatArea() {
     // Auto-create a conversation if none is active
     if (!activeConversation?._id) {
       try {
-        const newChat = await createConversation();
-        if (newChat) {
+        isAutoCreatingRef.current = true;
+        const titleSnippet = text.length > 30 ? text.substring(0, 30) + "..." : text;
+        const newChat = await createConversation({ title: titleSnippet });
+        if (newChat && newChat._id) {
           dispatch(addConversation(newChat));
           dispatch(setCurrentConversation(newChat));
+          localStorage.setItem("activeConversationId", newChat._id);
           activeConversation = newChat;
+        } else {
+          isAutoCreatingRef.current = false;
         }
       } catch (err) {
+        isAutoCreatingRef.current = false;
         console.error("Failed to auto-create conversation", err);
       }
     }
@@ -118,6 +133,19 @@ export default function ChatArea() {
     } finally {
       setIsGenerating(false);
     }
+    if (activeConversation?._id) {
+      const newTitle = text.length > 30 ? text.substring(0, 30) + "..." : text;
+
+      // Update in Redux (Instant UI update)
+      dispatch(updateConversationTitle({
+        conversationId: activeConversation._id,
+        title: newTitle
+      }));
+
+      // Persist in DB
+      updateConversationTitleApi(activeConversation._id, newTitle);
+    }
+
   };
 
   const handleKeyDown = (e) => {
@@ -189,14 +217,13 @@ export default function ChatArea() {
                   )}
 
                   <div
-                    className={`text-sm px-4 py-3 rounded-2xl max-w-[85%] leading-relaxed break-words shadow-sm ${
-                      isUser
+                    className={`text-sm px-4 py-3 rounded-2xl max-w-[85%] leading-relaxed break-words shadow-sm ${isUser
                         ? "bg-purple-950/40 text-purple-100 border border-purple-800/30 rounded-tr-sm"
                         : "bg-[#14141c] text-neutral-200 border border-neutral-800/80 rounded-tl-sm whitespace-pre-wrap"
-                    }`}
+                      }`}
                   >
                     <Markdown remarkPlugins={[remarkGFM]}>
-                    {msg.content}
+                      {msg.content}
                     </Markdown>
                   </div>
 

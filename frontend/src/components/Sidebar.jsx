@@ -3,12 +3,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { LuPanelLeft, LuSquarePen, LuPlus, LuMessageSquare, LuLoader, LuLogOut } from "react-icons/lu";
 import { getConversations } from "../features/getConversations.js";
 import { createConversation } from "../features/createConversation.js";
-import { setConversations, addConversation, setCurrentConversation } from "../redux/conversationSlice.js";
+import { setConversations, addConversation, setCurrentConversation, resetConversations } from "../redux/conversationSlice.js";
 import { setUserdata } from "../redux/userSlice.js";
 import { logout } from "../features/logout.js";
 import { auth } from "../../utils/firebase.js";
 import { signOut } from "firebase/auth";
 import UserAvatar from "./UserAvatar.jsx";
+import { setMessages, resetMessages } from "../redux/messageSlice.js";
 
 export default function Sidebar() {
   const dispatch = useDispatch();
@@ -27,8 +28,12 @@ export default function Sidebar() {
         const data = await getConversations();
         if (Array.isArray(data)) {
           dispatch(setConversations(data));
-          if (data.length > 0 && !currentConversation) {
-            dispatch(setCurrentConversation(data[0]));
+          const savedId = localStorage.getItem("activeConversationId");
+          if (savedId) {
+            const activeChat = data.find((c) => c._id === savedId);
+            if (activeChat) {
+              dispatch(setCurrentConversation(activeChat));
+            }
           }
         }
       } catch (err) {
@@ -42,28 +47,21 @@ export default function Sidebar() {
 
   // Handle + New Chat click
   const handleNewChat = async () => {
-    if (creating) return;
-    setCreating(true);
-    try {
-      const newChat = await createConversation();
-      if (newChat) {
-        dispatch(addConversation(newChat));
-        dispatch(setCurrentConversation(newChat));
-      }
-    } catch (err) {
-      console.error("Failed to create conversation", err);
-    } finally {
-      setCreating(false);
-    }
+    dispatch(setCurrentConversation(null));
+    dispatch(setMessages([]));
+    localStorage.removeItem("activeConversationId");
   };
 
   const handleLogout = async () => {
     try {
+      localStorage.removeItem("activeConversationId");
       await logout();
       await signOut(auth);
     } catch (e) {
       console.error("Logout error", e);
     }
+    dispatch(resetConversations());
+    dispatch(resetMessages());
     dispatch(setUserdata(null));
   };
 
@@ -128,7 +126,10 @@ export default function Sidebar() {
             return (
               <button
                 key={conv._id}
-                onClick={() => dispatch(setCurrentConversation(conv))}
+                onClick={() => {
+                  dispatch(setCurrentConversation(conv));
+                  localStorage.setItem("activeConversationId", conv._id);
+                }}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer text-left truncate ${
                   isSelected
                     ? "bg-purple-950/60 text-purple-200 border border-purple-800/40 font-medium"
