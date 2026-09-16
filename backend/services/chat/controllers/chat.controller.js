@@ -5,8 +5,10 @@ export const createConversation = async (req, res) => {
     try {
         const userId = req.headers["x-user-id"];
         console.log("userId:", userId);
+        const { title } = req.body || {};
         const conversation = await Conversation.create({
-            userId: userId
+            userId: userId,
+            title: title || "New Chat"
         });
         return res.status(200).json({ success: true, conversation });
     } catch (error) {
