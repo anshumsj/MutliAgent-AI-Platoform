@@ -9,7 +9,14 @@ import {
   LuSend,
   LuBot,
   LuUser,
-  LuLoader
+  LuLoader,
+  LuZap,
+  LuMessageSquare,
+  LuCode,
+  LuFileText,
+  LuPresentation,
+  LuImage,
+  LuGlobe
 } from "react-icons/lu";
 import getMessages from "../features/getMessages.js";
 import { sendMessage } from "../features/sendMessage.js";
@@ -18,12 +25,24 @@ import { setMessages, addMessage } from "../redux/messageSlice.js";
 import { addConversation, setCurrentConversation, updateConversationTitle } from "../redux/conversationSlice.js";
 import { updateConversationTitleApi } from "../features/updateConversation.js";
 
+// Agent selector options matching the UI pills
+const AGENTS = [
+  { id: "auto", label: "Auto", icon: LuZap },
+  { id: "chat", label: "Chat", icon: LuMessageSquare },
+  { id: "coding", label: "Coding", icon: LuCode },
+  { id: "pdf", label: "PDF", icon: LuFileText },
+  { id: "ppt", label: "PPT", icon: LuPresentation },
+  { id: "vision", label: "Image", icon: LuImage },
+  { id: "search", label: "Search", icon: LuGlobe },
+];
+
 export default function ChatArea() {
   const dispatch = useDispatch();
   const { currentConversation } = useSelector((state) => state.conversation);
   const messages = useSelector((state) => state.message?.messages || []);
 
   const [inputPrompt, setInputPrompt] = useState("");
+  const [selectedAgent, setSelectedAgent] = useState("auto");
   const [isGenerating, setIsGenerating] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -116,7 +135,7 @@ export default function ChatArea() {
     setIsGenerating(true);
 
     try {
-      const aiReply = await sendMessage(text, activeConversation?._id);
+      const aiReply = await sendMessage(text, activeConversation?._id, selectedAgent);
       const assistantMsg = {
         role: "assistant",
         content: typeof aiReply === "string" ? aiReply : JSON.stringify(aiReply),
@@ -257,6 +276,29 @@ export default function ChatArea() {
       {/* Bottom Input Area matching screenshot */}
       <div className="p-4 sm:p-6 bg-gradient-to-t from-[#0b0b0f] via-[#0b0b0f]/90 to-transparent shrink-0">
         <div className="max-w-3xl w-full mx-auto bg-[#121218] border border-neutral-800/80 rounded-2xl p-3 shadow-2xl focus-within:border-purple-600/50 transition-all duration-200">
+          {/* Agent Selection Pills Bar */}
+          <div className="flex items-center gap-1.5 pb-2 mb-1.5 border-b border-neutral-800/40 overflow-x-auto no-scrollbar select-none">
+            {AGENTS.map((item) => {
+              const Icon = item.icon;
+              const isSelected = selectedAgent === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSelectedAgent(item.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 cursor-pointer shrink-0 ${
+                    isSelected
+                      ? "bg-purple-600/30 text-purple-200 border border-purple-500/60 shadow-sm shadow-purple-900/30 font-semibold"
+                      : "text-neutral-400 bg-[#161622]/80 border border-neutral-800/80 hover:text-neutral-200 hover:border-neutral-700 hover:bg-[#1b1a29]"
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isSelected ? "text-purple-300" : "text-neutral-400"}`} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
           {/* Textarea */}
           <textarea
             ref={textareaRef}

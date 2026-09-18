@@ -1,6 +1,12 @@
 import { getModel } from "../config/llmModels.js";
 
 export const routerAgent = async (state) => {
+     // If the user explicitly selected an agent, bypass Router LLM classification
+     if (state.agent && state.agent !== "auto") {
+         console.log(`[Router] Manual selection override -> Routing directly to: ${state.agent}`);
+         return state;
+     }
+
      const llm = await getModel("router");
      const prompt=`You are the Router Agent for a multi-agent AI system.
 

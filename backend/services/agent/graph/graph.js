@@ -25,7 +25,8 @@ workflow.addConditionalEdges("router", (state) => {
         case "search": return "search";
         case "ppt": return "ppt";
         case "coding": return "coding";
-        case "vision": return "vision";
+        case "vision":
+        case "image": return "vision";
         case "pdf": return "pdf";
         default: return "chat";
     }
