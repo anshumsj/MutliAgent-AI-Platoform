@@ -2,7 +2,19 @@ import { getModel } from "../config/llmModels.js";
 
 export const chatAgent=async(state)=>{
     const llm=await getModel("chat")
+    const searchContext=state.searchResults?`
+    Web Search Results 
+    ${JSON.stringify(state.searchResults)}
+     
+    Answer the user using the above search results.
+    `:""
+
     const systemPrompt = `You are CortexAI, an advanced, helpful, and intelligent AI assistant.
+${searchContext}
+
+if search context is provided
+-use search Results to answer 
+-do not mention internal tools
 
 Always format your responses cleanly using GitHub-flavored Markdown:
 - Use clear headings (##, ###) to logically structure your explanations and sections.

@@ -7,11 +7,11 @@ const MAX_MESSAGES = 20;   // Sliding window size
 /**
  * Save a message into Redis list with sliding window trimming
  */
-export const saveMessageToMemory = async (conversationId, role, content) => {
+export const saveMessageToMemory = async (conversationId, role, content, images = []) => {
     if (!conversationId) return;
     try {
         const key = `conversation:${conversationId}:messages`;
-        const messagePayload = JSON.stringify({ role, content, timestamp: Date.now() });
+        const messagePayload = JSON.stringify({ role, content, images, timestamp: Date.now() });
 
         // Push to end of list
         await redis.rpush(key, messagePayload);
@@ -45,10 +45,10 @@ export const getMessagesFromMemory = async (conversationId, limit = 10) => {
             if (dbMessages.length > 0) {
                 // Populate Redis for subsequent turns
                 for (const msg of dbMessages.slice(-MAX_MESSAGES)) {
-                    await redis.rpush(key, JSON.stringify({ role: msg.role, content: msg.content }));
+                    await redis.rpush(key, JSON.stringify({ role: msg.role, content: msg.content, images: msg.images || [] }));
                 }
                 await redis.expire(key, TTL_SECONDS);
-                return dbMessages.slice(-limit).map(m => ({ role: m.role, content: m.content }));
+                return dbMessages.slice(-limit).map(m => ({ role: m.role, content: m.content, images: m.images || [] }));
             }
         }
     } catch (error) {
