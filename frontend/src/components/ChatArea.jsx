@@ -138,7 +138,8 @@ export default function ChatArea() {
       const aiReply = await sendMessage(text, activeConversation?._id, selectedAgent);
       const assistantMsg = {
         role: "assistant",
-        content: typeof aiReply === "string" ? aiReply : JSON.stringify(aiReply),
+        content: typeof aiReply === "string" ? aiReply : (aiReply?.content || ""),
+        images: Array.isArray(aiReply?.images) ? aiReply.images : [],
         timestamp: new Date().toISOString()
       };
       dispatch(addMessage(assistantMsg));

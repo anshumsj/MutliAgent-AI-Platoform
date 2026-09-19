@@ -7,7 +7,10 @@ export const sendMessage = async (prompt, conversationId, agent = "auto") => {
             conversationId,
             agent: agent !== "auto" ? agent : undefined
         });
-        return data?.data ?? data?.message ?? data;
+        return {
+            content: data?.data ?? data?.message ?? data,
+            images: data?.images || []
+        };
     } catch (err) {
         console.error("Error sending message to agent:", err.response?.data || err.message);
         throw err;
