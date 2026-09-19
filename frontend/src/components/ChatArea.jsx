@@ -23,6 +23,19 @@ import {
   LuCheck,
   LuDownload
 } from "react-icons/lu";
+import Prism from "prismjs";
+import "prismjs/themes/prism-tomorrow.css";
+import "prismjs/components/prism-javascript.js";
+import "prismjs/components/prism-typescript.js";
+import "prismjs/components/prism-jsx.js";
+import "prismjs/components/prism-tsx.js";
+import "prismjs/components/prism-python.js";
+import "prismjs/components/prism-bash.js";
+import "prismjs/components/prism-json.js";
+import "prismjs/components/prism-css.js";
+import "prismjs/components/prism-markdown.js";
+import "prismjs/components/prism-sql.js";
+import "prismjs/components/prism-yaml.js";
 import getMessages from "../features/getMessages.js";
 import { sendMessage } from "../features/sendMessage.js";
 import { createConversation } from "../features/createConversation.js";
@@ -41,9 +54,51 @@ const AGENTS = [
   { id: "search", label: "Search", icon: LuGlobe },
 ];
 
-// ChatGPT-style Code Block with syntax header and copy button
+// Language alias mapping for Prism.js
+const LANGUAGE_ALIASES = {
+  js: "javascript",
+  javascript: "javascript",
+  ts: "typescript",
+  typescript: "typescript",
+  jsx: "jsx",
+  tsx: "tsx",
+  py: "python",
+  python: "python",
+  sh: "bash",
+  bash: "bash",
+  shell: "bash",
+  zsh: "bash",
+  json: "json",
+  css: "css",
+  html: "markup",
+  xml: "markup",
+  markup: "markup",
+  sql: "sql",
+  yaml: "yaml",
+  yml: "yaml",
+  md: "markdown",
+  markdown: "markdown",
+};
+
+// ChatGPT-style Code Block with syntax header, copy button, and Prism highlighting
 function CodeBlock({ language, value }) {
   const [copied, setCopied] = useState(false);
+
+  const cleanLang = (language || "").toLowerCase().trim();
+  const prismLang = LANGUAGE_ALIASES[cleanLang] || cleanLang;
+  const grammar = Prism.languages[prismLang] || Prism.languages.javascript;
+
+  const highlightedHtml = useMemo(() => {
+    try {
+      if (grammar && value) {
+        return Prism.highlight(value, grammar, prismLang || "javascript");
+      }
+      return "";
+    } catch (err) {
+      console.warn("Prism highlight error:", err);
+      return "";
+    }
+  }, [value, grammar, prismLang]);
 
   const handleCopy = async () => {
     try {
@@ -60,7 +115,7 @@ function CodeBlock({ language, value }) {
       {/* Code Header Bar */}
       <div className="flex items-center justify-between px-3.5 py-1.5 bg-[#14141e] border-b border-neutral-800/80 text-xs text-neutral-400 select-none">
         <span className="font-mono text-[11px] font-medium lowercase tracking-wide text-neutral-300">
-          {language || "code"}
+          {cleanLang || "code"}
         </span>
         <button
           type="button"
@@ -82,9 +137,16 @@ function CodeBlock({ language, value }) {
       </div>
 
       {/* Code Text Content */}
-      <div className="p-3.5 overflow-x-auto text-xs sm:text-sm font-mono text-neutral-200 leading-relaxed select-text bg-[#0a0a0f]/90">
-        <pre className="m-0 p-0">
-          <code>{value}</code>
+      <div className="p-3.5 overflow-x-auto text-xs sm:text-sm font-mono leading-relaxed select-text bg-[#0a0a0f]/90">
+        <pre className="!m-0 !p-0 !bg-transparent">
+          {highlightedHtml ? (
+            <code
+              className={`language-${prismLang || "text"}`}
+              dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+            />
+          ) : (
+            <code>{value}</code>
+          )}
         </pre>
       </div>
     </div>
