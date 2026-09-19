@@ -43,6 +43,16 @@ export default function ChatArea() {
 
   const [inputPrompt, setInputPrompt] = useState("");
   const [selectedAgent, setSelectedAgent] = useState("auto");
+  const [activePreviewImage, setActivePreviewImage] = useState(null);
+
+  // Close image lightbox on Escape key
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setActivePreviewImage(null);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
   const [isGenerating, setIsGenerating] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -239,9 +249,48 @@ export default function ChatArea() {
                   <div
                     className={`text-sm px-4 py-3 rounded-2xl max-w-[85%] leading-relaxed break-words shadow-sm ${isUser
                         ? "bg-purple-950/40 text-purple-100 border border-purple-800/30 rounded-tr-sm"
-                        : "bg-[#14141c] text-neutral-200 border border-neutral-800/80 rounded-tl-sm whitespace-pre-wrap"
+                        : "bg-[#14141c] text-neutral-200 border border-neutral-800/80 rounded-tl-sm"
                       }`}
                   >
+                    {/* Search / Result Images Filmstrip */}
+                    {!isUser && Array.isArray(msg.images) && msg.images.length > 0 && (
+                      <div className="mb-3 pb-2.5 border-b border-neutral-800/60">
+                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-neutral-400 mb-2">
+                          <LuImage className="w-3.5 h-3.5 text-purple-400" />
+                          <span>Images ({msg.images.length})</span>
+                        </div>
+                        <div className="flex items-center gap-2.5 overflow-x-auto pb-1 no-scrollbar select-none">
+                          {msg.images.map((imgItem, imgIdx) => {
+                            const imgUrl = typeof imgItem === "string" ? imgItem : imgItem?.url;
+                            if (!imgUrl) return null;
+                            return (
+                              <div
+                                key={imgIdx}
+                                onClick={() => setActivePreviewImage(imgUrl)}
+                                className="relative group w-28 h-20 sm:w-36 sm:h-24 shrink-0 rounded-xl overflow-hidden border border-neutral-800 bg-[#161622] cursor-pointer hover:border-purple-500/60 shadow-sm transition-all duration-200"
+                              >
+                                <img
+                                  src={imgUrl}
+                                  alt={`Visual ${imgIdx + 1}`}
+                                  referrerPolicy="no-referrer"
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    console.warn("Image load failed (hidden):", imgUrl);
+                                    e.currentTarget.parentElement.style.display = "none";
+                                  }}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <span className="p-1.5 rounded-lg bg-black/60 text-white backdrop-blur-xs">
+                                    <LuExternalLink className="w-3.5 h-3.5" />
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                     <Markdown remarkPlugins={[remarkGFM]}>
                       {msg.content}
                     </Markdown>
@@ -345,6 +394,61 @@ export default function ChatArea() {
           </div>
         </div>
       </div>
+      {/* Lightbox Image Preview Modal */}
+      {activePreviewImage && (
+        <div
+          onClick={() => setActivePreviewImage(null)}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 select-none"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-4xl max-h-[90vh] bg-[#121218] border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800/60 bg-[#161620]">
+              <span className="text-xs font-medium text-neutral-300 truncate max-w-sm">
+                Image Preview
+              </span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={activePreviewImage}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
+                  title="Open or download image"
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800/80 transition-colors"
+                >
+                  <LuDownload className="w-4 h-4" />
+                </a>
+                <a
+                  href={activePreviewImage}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open in new tab"
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800/80 transition-colors"
+                >
+                  <LuExternalLink className="w-4 h-4" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setActivePreviewImage(null)}
+                  title="Close preview"
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800/80 transition-colors cursor-pointer"
+                >
+                  <LuX className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="p-2 sm:p-4 flex items-center justify-center overflow-auto max-h-[calc(90vh-60px)]">
+              <img
+                src={activePreviewImage}
+                alt="Preview"
+                referrerPolicy="no-referrer"
+                className="max-h-[75vh] max-w-full w-auto h-auto object-contain rounded-lg shadow-md"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
